@@ -49,13 +49,13 @@ jobs:
             release_framework="grs-${version}-${os_filename}"
   
             echo "Building for arch: $arch on ${{ matrix.target_os }}"
-            dotnet restore ./src/grs.sln
+            dotnet restore ./src/GRS.sln
             
             # Publish self-contained (standalone)
-            dotnet publish ./src/grs.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
+            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
   
             # Publish framework-dependent version
-            dotnet publish ./src/grs.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
+            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
   
             # Package the binaries based on OS
             if [[ "${{ matrix.target_os }}" == "windows" ]]; then
