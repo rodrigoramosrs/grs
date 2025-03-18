@@ -39,7 +39,7 @@ jobs:
         run: |
           set -e
           version=${{ github.run_number }}
-          # Prepare diretórios para os pacotes
+          # Create directories for output
           mkdir -p ./release/self ./release/dependant ./release/packages/self ./release/packages/dependant
           
           IFS=',' read -ra arch_list <<< "${{ matrix.arch_list }}"
@@ -51,13 +51,13 @@ jobs:
             echo "Building for arch: $arch on ${{ matrix.target_os }}"
             dotnet restore ./src/grs.sln
             
-            # Publica versão self-contained (standalone)
+            # Publish self-contained (standalone)
             dotnet publish ./src/grs.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
   
-            # Publica versão framework-dependent
+            # Publish framework-dependent version
             dotnet publish ./src/grs.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
   
-            # Empacota os arquivos
+            # Package the binaries according to OS
             if [[ "${{ matrix.target_os }}" == "windows" ]]; then
               7z a -tzip "./release/packages/self/${release_standalone}.zip" "./release/self/${release_standalone}/*"
               7z a -tzip "./release/packages/dependant/${release_framework}.zip" "./release/dependant/${release_framework}/*"
@@ -66,13 +66,13 @@ jobs:
               tar czvf "./release/packages/dependant/${release_framework}.tar.gz" -C "./release/dependant" "${release_framework}"
             fi
   
-            # Limpa as pastas de build
+            # Clean up build folders after packaging
             rm -rf "./release/self/${release_standalone}"
             rm -rf "./release/dependant/${release_framework}"
           done
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "grs-${{ github.run_number }}-${{ matrix.target_os }}"
           path: ./release/packages
@@ -82,54 +82,4 @@ jobs:
     needs: [compile_binaries]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set commit message
-        run: |
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
-          echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-        # Sem especificar o parâmetro "name", todos os artefatos dos jobs anteriores serão baixados
-        with:
-          path: ./release
-
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
-          body: |
-            Auto release.
-            ${{ env.COMMIT_MESSAGE }}
-          draft: false
-          prerelease: false
-
-      - name: Upload release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
-        run: |
-          set -e
-          # Faz um loop em todos os arquivos .zip e .tar.gz disponíveis no diretório de release
-          for file in $(find ./release -type f \( -name "*.zip" -o -name "*.tar.gz" \)); do
-            filename=$(basename "$file")
-            # Configura o content-type conforme a extensão
-            if [[ "$filename" == *.zip ]]; then
-              content_type="application/zip"
-            elif [[ "$filename" == *.tar.gz ]]; then
-              content_type="application/gzip"
-            else
-              content_type="application/octet-stream"
-            fi
-            echo "Uploading asset: $filename with content-type: $content_type"
-            curl --fail -X POST \
-              -H "Authorization: token $GITHUB_TOKEN" \
-              -H "Content-Type: $content_type" \
-              --data-binary @"$file" \
-              "${{ steps.create_release.outputs.upload_url }}?name=$filename"
-          done
+      - name: Checkout
