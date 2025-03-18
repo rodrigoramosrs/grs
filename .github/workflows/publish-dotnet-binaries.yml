@@ -39,7 +39,7 @@ jobs:
         run: |
           set -e
           version=${{ github.run_number }}
-          # Create directories for output
+          # Create output directories
           mkdir -p ./release/self ./release/dependant ./release/packages/self ./release/packages/dependant
           
           IFS=',' read -ra arch_list <<< "${{ matrix.arch_list }}"
@@ -57,7 +57,7 @@ jobs:
             # Publish framework-dependent version
             dotnet publish ./src/grs.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
   
-            # Package the binaries according to OS
+            # Package the binaries based on OS
             if [[ "${{ matrix.target_os }}" == "windows" ]]; then
               7z a -tzip "./release/packages/self/${release_standalone}.zip" "./release/self/${release_standalone}/*"
               7z a -tzip "./release/packages/dependant/${release_framework}.zip" "./release/dependant/${release_framework}/*"
@@ -82,4 +82,52 @@ jobs:
     needs: [compile_binaries]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set commit message
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
+          echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            Auto release.
+            ${{ env.COMMIT_MESSAGE }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
+        run: |
+          set -e
+          # Loop through package files and upload each using curl.
+          for file in $(find ./release -type f \( -name "*.zip" -o -name "*.tar.gz" \)); do
+            filename=$(basename "$file")
+            if [[ "$filename" == *.zip ]]; then
+              content_type="application/zip"
+            elif [[ "$filename" == *.tar.gz ]]; then
+              content_type="application/gzip"
+            else
+              content_type="application/octet-stream"
+            fi
+            echo "Uploading asset: $filename with content-type: $content_type"
+            curl --fail -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Content-Type: $content_type" \
+              --data-binary @"$file" \
+              "${{ steps.create_release.outputs.upload_url }}?name=$filename"
+          done
