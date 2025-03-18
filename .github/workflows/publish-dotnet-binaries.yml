@@ -45,6 +45,9 @@ jobs:
           # Create output directories
           mkdir -p ./release/self ./release/dependant ./release/packages/self ./release/packages/dependant
           
+          # Restore solution using the GRS solution file
+          dotnet restore ./src/GRS.sln
+          
           IFS=',' read -ra arch_list <<< "${{ matrix.arch_list }}"
           for arch in "${arch_list[@]}"; do
             os_filename="${{ matrix.target_os }}-$arch"
@@ -52,13 +55,12 @@ jobs:
             release_framework="grs-${version}-${os_filename}"
   
             echo "Building for arch: $arch on ${{ matrix.target_os }}"
-            dotnet restore ./src/grs.sln
-            
-            # Publish self-contained (standalone)
-            dotnet publish ./src/grs.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
   
-            # Publish framework-dependent version
-            dotnet publish ./src/grs.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
+            # Publish self-contained (standalone) using the GRS.CLI project
+            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
+  
+            # Publish framework-dependent version using the GRS.CLI project
+            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
   
             # Package the binaries according to OS
             if [[ "${{ matrix.target_os }}" == "windows" ]]; then
