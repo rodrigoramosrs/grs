@@ -99,7 +99,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ github.run_number }}
           release_name: Release v${{ github.run_number }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload release assets
         env:
-          GITHUB_TOKEN: ${{ secrets.BUILD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           # Loop through package files and upload each using curl.
