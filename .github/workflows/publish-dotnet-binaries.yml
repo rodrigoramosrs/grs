@@ -1,5 +1,8 @@
 name: Publish .NET Core binaries
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -49,15 +52,15 @@ jobs:
             release_framework="grs-${version}-${os_filename}"
   
             echo "Building for arch: $arch on ${{ matrix.target_os }}"
-            dotnet restore ./src/GRS.sln
+            dotnet restore ./src/grs.sln
             
             # Publish self-contained (standalone)
-            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
+            dotnet publish ./src/grs.csproj --configuration Release --self-contained true --runtime "$arch" -o "./release/self/${release_standalone}"
   
             # Publish framework-dependent version
-            dotnet publish ./src/GRS.CLI/GRS.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
+            dotnet publish ./src/grs.csproj --configuration Release --self-contained false --runtime "$arch" -o "./release/dependant/${release_framework}"
   
-            # Package the binaries based on OS
+            # Package the binaries according to OS
             if [[ "${{ matrix.target_os }}" == "windows" ]]; then
               7z a -tzip "./release/packages/self/${release_standalone}.zip" "./release/self/${release_standalone}/*"
               7z a -tzip "./release/packages/dependant/${release_framework}.zip" "./release/dependant/${release_framework}/*"
@@ -119,7 +122,7 @@ jobs:
             filename=$(basename "$file")
             if [[ "$filename" == *.zip ]]; then
               content_type="application/zip"
-            elif [[ "$filename" == *.tar.gz ]]; then
+            elif [[ "$filename" == *.tar.gz" ]]; then
               content_type="application/gzip"
             else
               content_type="application/octet-stream"
