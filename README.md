@@ -17,10 +17,10 @@ With a simple command-line interface powered by Spectre.Console, GRS lets you:
 - Stay in control with options like `--current-version` and `--save-dir`.
 
 For example:
----bash
-grs run --url https://raw.github.com/user/repo
-grs run --owner user --repo repository
----bash
+```bash
+grs update --url https://raw.github.com/user/repo --save-dir ./local_path
+grs update --owner user --repo repository --save-dir ./local_path
+```bash
 
 ## 💪 Why Choose GRS?
 
@@ -33,9 +33,10 @@ grs run --owner user --repo repository
 1. Clone this repository.  
 2. Install dependencies.  
 3. Run with your desired parameters:
----bash
-grs run --url <RAWREPOURL> --current-version 1.0 --save-dir ./downloads --force
----bash
+
+```bash
+grs update --url <RAWREPOURL> --current-version 1.0 --save-dir ./local_path --force
+```bash
 
 ## 💻 Under the Hood
 
