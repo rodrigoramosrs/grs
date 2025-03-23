@@ -36,7 +36,7 @@ grs update --owner user --repo repository --save-dir ./local_path
 
 ```bash
 grs update --url <RAWREPOURL> --current-version 1.0 --save-dir ./local_path --force
-```bash
+```
 
 ## 💻 Under the Hood
 
