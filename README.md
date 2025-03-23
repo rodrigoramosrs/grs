@@ -20,7 +20,7 @@ For example:
 ```bash
 grs update --url https://raw.github.com/user/repo --save-dir ./local_path
 grs update --owner user --repo repository --save-dir ./local_path
-```bash
+```
 
 ## 💪 Why Choose GRS?
 
